@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Exam Stress Predictor</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0a0a12; --card: #12121e; --border: rgba(255,255,255,0.07);
+    --accent: #ff3cac; --accent2: #784ba0; --accent3: #2b86c5;
+    --teal: #00f5c4; --text: #f0eeff; --muted: #8884a8;
+  }
+
+  body {
+    background: var(--bg); color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh; overflow-x: hidden;
+  }
+
+  .bg-orbs { position: fixed; inset: 0; pointer-events: none; z-index: 0; }
+  .orb {
+    position: absolute; border-radius: 50%; filter: blur(80px); opacity: 0.18;
+    animation: drift 18s ease-in-out infinite alternate;
+  }
+  .orb1 { width: 500px; height: 500px; background: #ff3cac; top: -150px; left: -150px; }
+  .orb2 { width: 400px; height: 400px; background: #2b86c5; bottom: -100px; right: -100px; animation-delay: -6s; }
+  .orb3 { width: 300px; height: 300px; background: #784ba0; top: 40%; left: 40%; animation-delay: -12s; }
+
+  @keyframes drift {
+    from { transform: translate(0,0) scale(1); }
+    to   { transform: translate(40px,30px) scale(1.08); }
+  }
+
+  .container {
+    position: relative; z-index: 1;
+    max-width: 680px; margin: 0 auto; padding: 60px 24px 80px;
+  }
+
+  header { text-align: center; margin-bottom: 56px; }
+  .emoji-ring {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 88px; height: 88px; border-radius: 50%;
+    background: linear-gradient(135deg, #ff3cac33, #2b86c533);
+    border: 1px solid rgba(255,60,172,0.3);
+    font-size: 40px; margin-bottom: 24px;
+    animation: pulse-ring 3s ease-in-out infinite;
+  }
+  @keyframes pulse-ring {
+    0%,100% { box-shadow: 0 0 0 0 rgba(255,60,172,0.2); }
+    50%      { box-shadow: 0 0 0 16px rgba(255,60,172,0); }
+  }
+  h1 {
+    font-family: 'Syne', sans-serif; font-size: clamp(32px,6vw,48px); font-weight: 800;
+    background: linear-gradient(135deg, #fff 0%, #ff3cac 50%, #2b86c5 100%);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    line-height: 1.1; margin-bottom: 12px;
+  }
+  .subtitle { color: var(--muted); font-size: 15px; font-weight: 300; letter-spacing: 0.5px; }
+
+  .progress-bar-wrap { background: var(--border); border-radius: 100px; height: 3px; margin-bottom: 8px; overflow: hidden; }
+  .progress-bar-fill {
+    height: 100%; border-radius: 100px;
+    background: linear-gradient(90deg, var(--accent), var(--accent3));
+    transition: width 0.5s cubic-bezier(0.4,0,0.2,1);
+  }
+  .step-label { text-align: center; font-size: 12px; color: var(--muted); margin-bottom: 28px; letter-spacing: 1px; text-transform: uppercase; }
+
+  .card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 24px; padding: 40px 36px;
+    box-shadow: 0 24px 64px rgba(0,0,0,0.4);
+    animation: slide-up 0.45s cubic-bezier(0.4,0,0.2,1) both;
+  }
+  @keyframes slide-up {
+    from { opacity: 0; transform: translateY(28px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .question-num {
+    font-family: 'Syne', sans-serif; font-size: 11px; font-weight: 700;
+    letter-spacing: 2px; color: var(--accent); text-transform: uppercase; margin-bottom: 10px;
+  }
+  .question-text {
+    font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 700;
+    line-height: 1.35; margin-bottom: 32px;
+  }
+
+  .slider-value-display { text-align: center; margin-bottom: 20px; }
+  .slider-big-num {
+    font-family: 'Syne', sans-serif; font-size: 56px; font-weight: 800;
+    background: linear-gradient(135deg, var(--accent), var(--accent3));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    line-height: 1;
+  }
+  .slider-unit { font-size: 13px; color: var(--muted); margin-top: 4px; }
+
+  input[type=range] {
+    -webkit-appearance: none; width: 100%; height: 6px;
+    border-radius: 100px; outline: none; cursor: pointer;
+    background: linear-gradient(90deg, var(--accent) 0%, var(--accent2) var(--pct,50%), rgba(255,255,255,0.08) var(--pct,50%));
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%;
+    background: white; box-shadow: 0 0 0 4px var(--accent), 0 4px 12px rgba(255,60,172,0.4);
+    cursor: pointer; transition: transform 0.15s;
+  }
+  input[type=range]:hover::-webkit-slider-thumb { transform: scale(1.2); }
+  .slider-labels { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); margin-top: 10px; }
+
+  .stars { display: flex; gap: 10px; justify-content: center; margin-bottom: 8px; }
+  .star {
+    font-size: 36px; cursor: pointer;
+    filter: grayscale(1) opacity(0.35);
+    transition: transform 0.2s, filter 0.2s;
+  }
+  .star.active { filter: grayscale(0) opacity(1); transform: scale(1.15); }
+  .star:hover  { transform: scale(1.25); filter: grayscale(0) opacity(0.8); }
+
+  .btn-row { display: flex; gap: 12px; margin-top: 32px; }
+  .btn {
+    flex: 1; padding: 16px; border-radius: 14px; border: none; cursor: pointer;
+    font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 700;
+    transition: transform 0.15s, box-shadow 0.15s;
+  }
+  .btn:active { transform: scale(0.97); }
+  .btn-primary {
+    background: linear-gradient(135deg, var(--accent), var(--accent2), var(--accent3));
+    background-size: 200% 200%;
+    color: white; box-shadow: 0 8px 24px rgba(255,60,172,0.35);
+    animation: grad-shift 4s ease infinite;
+  }
+  @keyframes grad-shift {
+    0%,100% { background-position: 0% 50%; }
+    50%      { background-position: 100% 50%; }
+  }
+  .btn-primary:hover { box-shadow: 0 12px 32px rgba(255,60,172,0.5); transform: translateY(-2px); }
+  .btn-ghost { background: transparent; border: 1px solid var(--border); color: var(--muted); }
+  .btn-ghost:hover { border-color: rgba(255,255,255,0.2); color: var(--text); }
+
+  /* RESULT */
+  #result-section { display: none; }
+  .result-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 24px; padding: 40px 36px;
+    box-shadow: 0 24px 64px rgba(0,0,0,0.4);
+    animation: slide-up 0.5s cubic-bezier(0.4,0,0.2,1) both;
+  }
+  .score-ring-wrap { text-align: center; margin-bottom: 36px; }
+  .score-ring { position: relative; display: inline-block; width: 160px; height: 160px; }
+  .score-ring svg { transform: rotate(-90deg); }
+  .score-ring circle { transition: stroke-dashoffset 1.2s cubic-bezier(0.4,0,0.2,1); }
+  .score-center {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+  }
+  .score-num { font-family: 'Syne', sans-serif; font-size: 42px; font-weight: 800; line-height: 1; }
+  .score-denom { font-size: 13px; color: var(--muted); }
+
+  .stress-badge {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 10px 20px; border-radius: 100px;
+    font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 700;
+    letter-spacing: 1px; text-transform: uppercase;
+    margin: 16px auto 8px; border: 1.5px solid;
+  }
+  .stress-msg { font-size: 14px; color: var(--muted); text-align: center; margin-bottom: 32px; }
+
+  .tips-title {
+    font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 700;
+    letter-spacing: 2px; text-transform: uppercase; color: var(--muted); margin-bottom: 16px;
+  }
+  .tip-item {
+    display: flex; align-items: flex-start; gap: 12px;
+    padding: 14px 16px; border-radius: 12px;
+    background: rgba(255,255,255,0.03); border: 1px solid var(--border);
+    margin-bottom: 10px; font-size: 14px; line-height: 1.5;
+    animation: slide-up 0.4s both;
+  }
+  .tip-icon { font-size: 20px; flex-shrink: 0; margin-top: 1px; }
+
+  .retry-btn {
+    width: 100%; margin-top: 28px; padding: 16px;
+    border-radius: 14px; border: 1px solid var(--border);
+    background: transparent; color: var(--muted);
+    font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 700;
+    cursor: pointer; transition: all 0.2s;
+  }
+  .retry-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  .powered {
+    text-align: center; margin-top: 24px;
+    font-size: 11px; color: var(--muted); letter-spacing: 1px;
+  }
+  .powered span { color: var(--accent); }
+</style>
+</head>
+<body>
+
+<div class="bg-orbs">
+  <div class="orb orb1"></div>
+  <div class="orb orb2"></div>
+  <div class="orb orb3"></div>
+</div>
+
+<div class="container">
+  <header>
+    <div class="emoji-ring">📚</div>
+    <h1>Exam Stress Predictor</h1>
+    <p class="subtitle">Answer 5 quick questions · Get your stress score · Feel better</p>
+  </header>
+
+  <!-- QUIZ -->
+  <div id="quiz-section">
+    <div class="progress-bar-wrap">
+      <div class="progress-bar-fill" id="prog" style="width:20%"></div>
+    </div>
+    <div class="step-label" id="step-label">Step 1 of 5</div>
+    <div class="card" id="q-card"></div>
+  </div>
+
+  <!-- RESULT -->
+  <div id="result-section">
+    <div class="result-card">
+      <div class="score-ring-wrap">
+        <div class="score-ring">
+          <svg width="160" height="160" viewBox="0 0 160 160">
+            <circle cx="80" cy="80" r="68" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="12"/>
+            <circle id="score-arc" cx="80" cy="80" r="68" fill="none"
+              stroke="url(#arcGrad)" stroke-width="12" stroke-linecap="round"
+              stroke-dasharray="427" stroke-dashoffset="427"/>
+            <defs>
+              <linearGradient id="arcGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stop-color="#ff3cac"/>
+                <stop offset="100%" stop-color="#2b86c5"/>
+              </linearGradient>
+            </defs>
+          </svg>
+          <div class="score-center">
+            <span class="score-num" id="score-num">0</span>
+            <span class="score-denom">/ 100</span>
+          </div>
+        </div>
+        <div style="text-align:center">
+          <div class="stress-badge" id="stress-badge"></div>
+        </div>
+        <p class="stress-msg" id="stress-msg"></p>
+      </div>
+
+      <div class="tips-title">💡 Tips for you</div>
+      <div id="tips-list"></div>
+
+      <button class="retry-btn" onclick="restart()">↩ Try Again</button>
+    </div>
+    <p class="powered">Powered by <span>Python Flask</span> · Built with ❤️</p>
+  </div>
+</div>
+
+<script>
+const questions = [
+  { key:"days",       num:"01", text:"How many days until your exam?",               type:"slider", min:1,  max:60, def:7,  unit:"days left",        labels:["1 day","30 days","60 days"] },
+  { key:"hours",      num:"02", text:"How many hours have you studied so far?",       type:"slider", min:0,  max:50, def:8,  unit:"hours studied",    labels:["0 hrs","25 hrs","50 hrs"] },
+  { key:"confidence", num:"03", text:"How confident do you feel about the exam?",     type:"stars",  emoji:["😰","😟","😐","🙂","😎"], labels:["Not at all","","Okay","","Very confident"] },
+  { key:"sleep",      num:"04", text:"How has your sleep been lately?",               type:"stars",  emoji:["😵","😴","😑","🌙","✨"], labels:["Terrible","","Okay","","Amazing"] },
+  { key:"exams",      num:"05", text:"How many exams do you have this week?",         type:"slider", min:1,  max:8,  def:2,  unit:"exams this week",  labels:["1","4","8+"] },
+];
+
+let current = 0;
+const answers = {};
+
+function renderQuestion() {
+  const q = questions[current];
+  const card = document.getElementById("q-card");
+  card.style.animation = "none"; void card.offsetWidth;
+  card.style.animation = "slide-up 0.4s cubic-bezier(0.4,0,0.2,1) both";
+
+  const pct = ((current + 1) / questions.length) * 100;
+  document.getElementById("prog").style.width = pct + "%";
+  document.getElementById("step-label").textContent = `Step ${current + 1} of ${questions.length}`;
+
+  if (q.type === "slider") {
+    const val = answers[q.key] ?? q.def;
+    card.innerHTML = `
+      <div class="question-num">Question ${q.num}</div>
+      <div class="question-text">${q.text}</div>
+      <div class="slider-value-display">
+        <div class="slider-big-num" id="sval">${val}</div>
+        <div class="slider-unit">${q.unit}</div>
+      </div>
+      <input type="range" id="slider" min="${q.min}" max="${q.max}" value="${val}">
+      <div class="slider-labels">${q.labels.map(l=>`<span>${l}</span>`).join("")}</div>
+      <div class="btn-row">
+        ${current > 0 ? '<button class="btn btn-ghost" onclick="back()">← Back</button>' : ""}
+        <button class="btn btn-primary" onclick="nextSlider()">
+          ${current === questions.length-1 ? "See My Results 🎯" : "Next →"}
+        </button>
+      </div>`;
+
+    const slider = document.getElementById("slider");
+    setGrad(slider);
+    slider.addEventListener("input", () => { document.getElementById("sval").textContent = slider.value; setGrad(slider); });
+
+  } else {
+    const val = answers[q.key] ?? 3;
+    card.innerHTML = `
+      <div class="question-num">Question ${q.num}</div>
+      <div class="question-text">${q.text}</div>
+      <div class="stars" id="stars">
+        ${q.emoji.map((e,i) => `<span class="star ${i<val?"active":""}" data-val="${i+1}">${e}</span>`).join("")}
+      </div>
+      <div style="text-align:center;font-size:13px;color:var(--muted);margin-bottom:8px" id="slbl">${q.labels[val-1]||""}</div>
+      <div class="btn-row">
+        ${current > 0 ? '<button class="btn btn-ghost" onclick="back()">← Back</button>' : ""}
+        <button class="btn btn-primary" onclick="nextStar()">
+          ${current === questions.length-1 ? "See My Results 🎯" : "Next →"}
+        </button>
+      </div>`;
+
+    if (!answers[q.key]) answers[q.key] = val;
+    document.querySelectorAll(".star").forEach(s => {
+      s.addEventListener("click", () => {
+        const v = +s.dataset.val; answers[q.key] = v;
+        document.querySelectorAll(".star").forEach((x,i) => x.classList.toggle("active", i < v));
+        document.getElementById("slbl").textContent = q.labels[v-1] || "";
+      });
+    });
+  }
+}
+
+function setGrad(slider) {
+  const pct = ((slider.value - slider.min) / (slider.max - slider.min)) * 100;
+  slider.style.setProperty("--pct", pct + "%");
+}
+
+function nextSlider() { answers[questions[current].key] = +document.getElementById("slider").value; advance(); }
+function nextStar()   { advance(); }
+function back()       { current--; renderQuestion(); }
+
+function advance() {
+  current++;
+  if (current >= questions.length) submitToServer();
+  else renderQuestion();
+}
+
+// ── SEND TO PYTHON FLASK ──
+async function submitToServer() {
+  const res  = await fetch("/predict", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(answers)
+  });
+  const data = await res.json();
+  showResult(data);
+}
+
+function showResult(data) {
+  document.getElementById("quiz-section").style.display = "none";
+  const rs = document.getElementById("result-section");
+  rs.style.display = "block";
+
+  // animate number
+  const numEl = document.getElementById("score-num");
+  let n = 0;
+  const timer = setInterval(() => {
+    n = Math.min(n + Math.ceil(data.score / 50), data.score);
+    numEl.textContent = n;
+    if (n >= data.score) clearInterval(timer);
+  }, 20);
+
+  // arc
+  setTimeout(() => {
+    const arc = document.getElementById("score-arc");
+    arc.style.strokeDashoffset = 427 - (427 * data.score / 100);
+    arc.style.stroke = data.color;
+  }, 100);
+
+  const badge = document.getElementById("stress-badge");
+  badge.textContent = data.label;
+  badge.style.color = data.color;
+  badge.style.borderColor = data.color;
+  badge.style.background = data.color + "18";
+
+  document.getElementById("stress-msg").textContent = data.message;
+
+  document.getElementById("tips-list").innerHTML = data.tips.map((t,i) => `
+    <div class="tip-item" style="animation-delay:${i*0.1}s">
+      <span class="tip-icon">${t.icon}</span>
+      <span>${t.text}</span>
+    </div>`).join("");
+}
+
+function restart() {
+  current = 0;
+  Object.keys(answers).forEach(k => delete answers[k]);
+  document.getElementById("result-section").style.display = "none";
+  document.getElementById("quiz-section").style.display = "block";
+  renderQuestion();
+}
+
+renderQuestion();
+</script>
+</body>
+</html>
